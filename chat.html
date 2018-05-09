@@ -10,6 +10,8 @@ form { background: #bbb; padding: 3px; position: fixed; bottom: 0; width: 100%; 
 #messages li { padding: 5px 10px; }
 #messages li:nth-child(odd) { background: #eee; }
 #message {width:55%}
+.time {font-family: monospace;color: #aaa; margin-right:0.75em;}
+.name {font-weight: bold;}
 </style>
 </head>
 <body>
@@ -25,22 +27,35 @@ Nachricht: <input id="message" autocomplete="off" /><button>Los!</button>
 <script src="/jquery.js"></script>
 <script>
 
-let url = new URL(window.location.href);
-let room = url.searchParams.get("room");
-if(!room) room = "lobby";
-
 $(function () {
-	var socket = io();
+	let url = new URL(window.location.href);
+	let room = url.searchParams.get("room");
+	if(!room) room = "lobby";
 
+	let socket = io();
 	socket.emit("joinRoom", room);
 
+	function getName() {
+		let name = localStorage.getItem("chatName");
+		if(!name) {
+			name = "Person-" + ((Math.random() * 1000) & 0xFFFFFFFF);
+		}
+		$('#name').val(name);
+		return name;
+	};
+
+	function setName(name) {
+		console.log("New name: " + name);
+		localStorage.setItem("chatName", name);
+		socket.emit("updateName", getName());
+	}
+	setName(getName());
+
 	$('form').submit(function(){
-		let name = $('#name').val();
+		let name = getName();
 		let message = $('#message').val();
 
 		let msg = {
-			"room": room,
-			"name": name,
 			"message": message
 		}
 
@@ -49,28 +64,32 @@ $(function () {
 		return false;
 	});
 
+	$('#name').change(function() {
+		setName($(this).val());
+	});
+
 
 	socket.on('chatMessage', function(msg){
 		if(msg.room != room) return;
 
+		let d = new Date(msg.date);
+
 		let li = $('<li>');
-		li.append($('<b>').text(msg.name + ": "));
+		li.append($("<span class='time'>").text(d.toLocaleTimeString()));
+		li.append($("<span class='name'>").text(msg.name + ": "));
 		li.append($('<span>').text(msg.message));
 		$('#messages').prepend(li);
 	});
 
+	socket.on("updateNames", function(names){
+		console.log("received new name list...");
+		names.forEach(name => {
+			console.log(name);
+		});
+	});
+
 });
 
-$('#name').change(function() {
-	console.log($(this).val());
-	localStorage.setItem("chatName", $(this).val());
-});
-
-let name = localStorage.getItem("chatName");
-if(!name) {
-	name = "Person-" + ((Math.random() * 1000) & 0xFFFFFFFF);
-}
-$('#name').val(name);
 
 </script>
 </body>
