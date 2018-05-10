@@ -1,17 +1,20 @@
 <!doctype html>
 <html>
 <head>
-<title>simple-chat chat</title>
+<title>simple-chat</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font: 13px Helvetica, Arial; }
 form { background: #bbb; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-#messages { list-style-type: none; margin: 0; padding: 0; }
+#messages { list-style-type: none; margin: 0; padding: 0; float: left; width:80%;}
 #messages li { padding: 5px 10px; }
 #messages li:nth-child(odd) { background: #eee; }
 #message {width:55%}
-.time {font-family: monospace;color: #aaa; margin-right:0.75em;}
-.name {font-weight: bold;}
+#namelistdiv {margin: 0; padding: 0; float:right; width:18%;}
+#namelisthead {font-weight: bold; padding-bottom: 0.5em;}
+#namelist { list-style-type: none;}
+.time {font-family: monospace;color: #aaa; margin-right:0.5em;}
+.name {font-weight: bold; margin-right:0.5em;}
 </style>
 </head>
 <body>
@@ -22,6 +25,11 @@ form { background: #bbb; padding: 3px; position: fixed; bottom: 0; width: 100%; 
 Name: <input id="name"/>
 Nachricht: <input id="message" autocomplete="off" /><button>Los!</button>
 </form>
+
+<div id="namelistdiv">
+	<p id="namelisthead">Personen im Raum:</p>
+	<ul id="namelist"></ul>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/jquery.js"></script>
@@ -36,11 +44,15 @@ $(function () {
 	socket.emit("joinRoom", room);
 
 	function getName() {
+		let oldname = $("#name").val();
 		let name = localStorage.getItem("chatName");
 		if(!name) {
 			name = "Person-" + ((Math.random() * 1000) & 0xFFFFFFFF);
 		}
-		$('#name').val(name);
+		$("#name").val(name);
+		if(oldname != name) {
+			setName(name);
+		}
 		return name;
 	};
 
@@ -68,7 +80,6 @@ $(function () {
 		setName($(this).val());
 	});
 
-
 	socket.on('chatMessage', function(msg){
 		if(msg.room != room) return;
 
@@ -77,14 +88,19 @@ $(function () {
 		let li = $('<li>');
 		li.append($("<span class='time'>").text(d.toLocaleTimeString()));
 		li.append($("<span class='name'>").text(msg.name + ": "));
-		li.append($('<span>').text(msg.message));
+		li.append($("<span>").text(msg.message));
 		$('#messages').prepend(li);
 	});
 
 	socket.on("updateNames", function(names){
 		console.log("received new name list...");
+		let list = $("#namelist");
+		list.empty();
+		names.sort();
 		names.forEach(name => {
 			console.log(name);
+			let li = $("<li>").text(name);
+			list.append(li);
 		});
 	});
 
