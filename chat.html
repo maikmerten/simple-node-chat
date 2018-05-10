@@ -95,6 +95,7 @@ $(function () {
 	socket.on("updateNames", function(names){
 		console.log("received new name list...");
 		let list = $("#namelist");
+		$("#namelisthead").text("Personen im Raum: " + names.length);
 		list.empty();
 		names.sort();
 		names.forEach(name => {
