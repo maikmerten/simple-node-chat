@@ -7,7 +7,7 @@
 body { font: 13px Helvetica, Arial; }
 form { background: #bbb; padding: 3px; position: fixed; bottom: 0; width: 100%; }
 #messages { list-style-type: none; margin: 0; padding: 0; float: left; width:80%;}
-#messages li { padding: 5px 10px; }
+#messages li { padding: 5px 10px; border-left: 0.75em solid black;}
 #messages li:nth-child(odd) { background: #eee; }
 #message {width:55%}
 #namelistdiv {margin: 0; padding: 0; float:right; width:18%;}
@@ -23,6 +23,7 @@ form { background: #bbb; padding: 3px; position: fixed; bottom: 0; width: 100%; 
 <ul id="messages"></ul>
 <form action="">
 Name: <input id="name"/>
+Farbe: <input id="color" type="color"/>
 Nachricht: <input id="message" autocomplete="off" /><button>Los!</button>
 </form>
 
@@ -63,11 +64,28 @@ $(function () {
 	}
 	setName(getName());
 
+	function getColor() {
+		let color = localStorage.getItem("chatColor");
+		if(!color) {
+			color = "#aaaaaa";
+		}
+		$("#color").val(color);
+		return color;
+	}
+
+	function setColor(color) {
+		console.log("Color: " + color);
+		localStorage.setItem("chatColor", color);
+	}
+	setColor(getColor());
+
 	$('form').submit(function(){
 		let name = getName();
+		let color = getColor();
 		let message = $('#message').val();
 
 		let msg = {
+			"color": color,
 			"message": message
 		}
 
@@ -80,6 +98,10 @@ $(function () {
 		setName($(this).val());
 	});
 
+	$('#color').change(function() {
+		setColor($(this).val());
+	});
+
 	socket.on('chatMessage', function(msg){
 		if(msg.room != room) return;
 
@@ -89,6 +111,7 @@ $(function () {
 		li.append($("<span class='time'>").text(d.toLocaleTimeString()));
 		li.append($("<span class='name'>").text(msg.name + ": "));
 		li.append($("<span>").text(msg.message));
+		li.css("border-left-color", msg.color);
 		$('#messages').prepend(li);
 	});
 
