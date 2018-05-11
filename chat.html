@@ -7,7 +7,7 @@
 body { font: 13px Helvetica, Arial; }
 form { background: #bbb; padding: 0.25em; line-height:2em; position: fixed; bottom: 0; width: 100%;}
 #messages { list-style-type: none; margin: 0; padding: 0; float: left; width:80%;}
-#messages li { padding: 5px 10px; border-left: 0.75em solid black;}
+#messages li { padding: 5px 10px; border-left: 0.75em solid black; animation-name: message-fade-in; animation-duration: 0.5s;}
 #messages li:nth-child(odd) { background: #eee; }
 #message {width:55%}
 #namelistdiv {margin: 0; padding: 0.75em; float:right; width:20%;}
@@ -15,6 +15,11 @@ form { background: #bbb; padding: 0.25em; line-height:2em; position: fixed; bott
 #namelist { list-style-type: none;}
 .time {font-family: monospace;color: #aaa; margin-right:0.5em;}
 .name {font-weight: bold; margin-right:0.5em;}
+@keyframes message-fade-in {
+	0% {opacity: 0; transform: scale(0); background-color: red}
+	50% {transform: scale(1.5)}
+	100% {opacity: 1}
+}
 </style>
 </head>
 <body>
