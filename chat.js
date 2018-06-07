@@ -35,6 +35,7 @@ io.on('connection', function(socket){
     msg.name = socket.mydata.name;
     msg.date = Date.now();
     msg.room = socket.mydata.room;
+    msg.ipaddr = socket.handshake.address;
     io.in(msg.room).emit('chatMessage', msg);
   });
 
