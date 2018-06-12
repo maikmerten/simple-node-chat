@@ -1,145 +1,107 @@
 <!doctype html>
 <html>
+
 <head>
-<title>simple-chat</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font: 13px Helvetica, Arial; }
-form { background: #bbb; padding: 0.25em; line-height:2em; position: fixed; bottom: 0; width: 100%;}
-#messages { list-style-type: none; margin: 0; padding: 0; float: left; width:80%;}
-#messages li { padding: 5px 10px; border-left: 0.75em solid black; border-right: 0.75em solid black; animation-name: message-fade-in; animation-duration: 0.5s;}
-#messages li:nth-child(odd) { background: #eee; }
-#name {width:12%}
-#message {width:50%}
-#namelistdiv {margin: 0; padding: 0.75em; float:right; width:20%;}
-#namelisthead {font-weight: bold; padding-bottom: 0.5em;}
-#namelist { list-style-type: none;}
-.time {font-family: monospace;color: #aaa; margin-right:0.5em;}
-.name {font-weight: bold; margin-right:0.5em;}
-.ipaddr {padding-left:2em; color: #aaa; font-size: 8pt};
-@keyframes message-fade-in {
-	0% {opacity: 0; transform: scale(0); background-color: red}
-	50% {transform: scale(1.5)}
-	100% {opacity: 1}
-}
-</style>
+	<link rel="stylesheet" type="text/css" href="/chat.css">
+	<title>simple-chat</title>
 </head>
+
 <body>
 
 
-<ul id="messages"></ul>
-<form action="">
-Name: <input id="name"/>
-Farbe: <input id="color" type="color"/>
-Nachricht: <input id="message" autocomplete="off" /><button>Los!</button>
-</form>
+	<ul id="messages"></ul>
+	<form action="">
+		Farbe:
+		<input id="color" type="color" /> Nachricht:
+		<input id="message" autocomplete="off" />
+		<button>Los!</button>
+		<input type="button" onclick="location.href='/logout';" value="Abmelden" />
+	</form>
 
-<div id="namelistdiv">
-	<p id="namelisthead">Personen im Raum:</p>
-	<ul id="namelist"></ul>
-</div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="/jquery.js"></script>
-<script>
+	<div id="namelistdiv">
+		<p id="namelisthead">Personen im Raum:</p>
+		<ul id="namelist"></ul>
+	</div>
 
-$(function () {
-	let url = new URL(window.location.href);
-	let room = url.searchParams.get("room");
-	if(!room) room = "lobby";
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="/jquery.js"></script>
+	<script>
 
-	let socket = io();
-	socket.emit("joinRoom", room);
+		$(function () {
+			let userid = "{userid}";
+			let room = "{room}";
 
-	function getName() {
-		let oldname = $("#name").val();
-		let name = localStorage.getItem("chatName");
-		if(!name) {
-			name = "Person-" + ((Math.random() * 1000) & 0xFFFFFFFF);
-		}
-		$("#name").val(name);
-		if(oldname != name) {
-			setName(name);
-		}
-		return name;
-	};
+			let socket = io();
+			socket.emit("joinRoom", { room: room, userid: userid });
 
-	function setName(name) {
-		console.log("New name: " + name);
-		localStorage.setItem("chatName", name);
-		socket.emit("updateName", getName());
-	}
-	setName(getName());
+			function getColor() {
+				let color = localStorage.getItem("chatColor");
+				if (!color) {
+					color = "#aaaaaa";
+				}
+				$("#color").val(color);
+				return color;
+			}
 
-	function getColor() {
-		let color = localStorage.getItem("chatColor");
-		if(!color) {
-			color = "#aaaaaa";
-		}
-		$("#color").val(color);
-		return color;
-	}
+			function setColor(color) {
+				console.log("Color: " + color);
+				localStorage.setItem("chatColor", color);
+			}
+			setColor(getColor());
 
-	function setColor(color) {
-		console.log("Color: " + color);
-		localStorage.setItem("chatColor", color);
-	}
-	setColor(getColor());
+			$('form').submit(function () {
+				let color = getColor();
+				let message = $('#message').val();
 
-	$('form').submit(function(){
-		let name = getName();
-		let color = getColor();
-		let message = $('#message').val();
+				let msg = {
+					"color": color,
+					"message": message
+				}
 
-		let msg = {
-			"color": color,
-			"message": message
-		}
+				socket.emit('chatMessage', msg);
+				$('#message').val('');
+				return false;
+			});
 
-		socket.emit('chatMessage', msg);
-		$('#message').val('');
-		return false;
-	});
+			$('#color').change(function () {
+				setColor($(this).val());
+			});
 
-	$('#name').change(function() {
-		setName($(this).val());
-	});
+			socket.on('chatMessage', function (msg) {
+				if (msg.room != room) return;
 
-	$('#color').change(function() {
-		setColor($(this).val());
-	});
+				let d = new Date(msg.date);
 
-	socket.on('chatMessage', function(msg){
-		if(msg.room != room) return;
+				let li = $('<li>');
+				li.append($("<span class='time'>").text(d.toLocaleTimeString()));
+				li.append($("<span class='name'>").text(msg.name + ": "));
+				li.append($("<span>").text(msg.message));
+				if (msg.ipaddr) {
+					li.append($("<span class='ipaddr'>").text("Sender: " + msg.ipaddr));
+				}
+				li.css("border-left-color", msg.color);
+				li.css("border-right-color", msg.color);
+				$('#messages').prepend(li);
+			});
 
-		let d = new Date(msg.date);
+			socket.on("updateNames", function (names) {
+				console.log("received new name list...");
+				let list = $("#namelist");
+				$("#namelisthead").text("Personen im Raum: " + names.length);
+				list.empty();
+				names.sort();
+				names.forEach(name => {
+					console.log(name);
+					let li = $("<li>").text(name);
+					list.append(li);
+				});
+			});
 
-		let li = $('<li>');
-		li.append($("<span class='time'>").text(d.toLocaleTimeString()));
-		li.append($("<span class='name'>").text(msg.name + ": "));
-		li.append($("<span>").text(msg.message));
-		li.append($("<span class='ipaddr'>").text("Sender: " + msg.ipaddr));
-		li.css("border-left-color", msg.color);
-		li.css("border-right-color", msg.color);
-		$('#messages').prepend(li);
-	});
-
-	socket.on("updateNames", function(names){
-		console.log("received new name list...");
-		let list = $("#namelist");
-		$("#namelisthead").text("Personen im Raum: " + names.length);
-		list.empty();
-		names.sort();
-		names.forEach(name => {
-			console.log(name);
-			let li = $("<li>").text(name);
-			list.append(li);
 		});
-	});
-
-});
 
 
-</script>
+	</script>
 </body>
+
 </html>
