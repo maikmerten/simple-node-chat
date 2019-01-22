@@ -14,9 +14,15 @@ let ldapconfig = {
     }
 };
 
+let tlsconfig = {
+    cert: 'MyCertificate.crt',
+    key: 'MyKey.key'
+}
+
 
 let config = {
     ldapconfig: ldapconfig,
+    tlsconfig: tlsconfig,
     showIP: false
 };
 
