@@ -1,7 +1,7 @@
 "use strict";
 
 var app = require('express')();
-var http = require('http');
+var http = require('https');
 var passport = require('passport');
 var bodyParser = require('body-parser');
 var ldapStrategy = require('passport-ldapauth');
@@ -19,7 +19,7 @@ const tlsoptions = {
 };
 
 
-var httpServer = http.createServer(app);
+var httpServer = http.createServer(tlsoptions, app);
 var io = require('socket.io')(httpServer);
 
 
@@ -37,7 +37,7 @@ app.use(session({
   resave: true,
   saveUninitialized: true,
   cookie: {
-    httpOnly: true,
+    httpOnly: false,
     expires: cookieExpirationDate // use expires instead of maxAge
   }
 }));
