@@ -1,8 +1,7 @@
 "use strict";
 
 var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var http = require('http');
 var passport = require('passport');
 var bodyParser = require('body-parser');
 var ldapStrategy = require('passport-ldapauth');
@@ -10,9 +9,19 @@ var session = require('express-session');
 var cookieParser = require('cookie-parser');
 var crypto = require('crypto');
 var whiskers = require('whiskers');
+var fs = require('fs');
 
 // local configuration, see config-example.js
 let config = require("./config");
+const tlsoptions = {
+  key: fs.readFileSync(config.tlsconfig.key),
+  cert: fs.readFileSync(config.tlsconfig.cert)
+};
+
+
+var httpServer = http.createServer(app);
+var io = require('socket.io')(httpServer);
+
 
 const secret = "yay!" + new Date().getTime();
 
@@ -167,7 +176,9 @@ io.on('connection', function (socket) {
 
 });
 
-
-http.listen(9090, function () {
+httpServer.listen(9090, function () {
   console.log('node chat server listening on *:9090');
 });
+
+
+
