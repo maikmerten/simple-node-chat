@@ -181,4 +181,9 @@ httpServer.listen(9090, function () {
 });
 
 
+// log uncaught exceptions so the service doesn't exit
+process.on('uncaughtException', function(err) {
+    console.log(err)
+})
+
 
